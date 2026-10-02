@@ -1,0 +1,16 @@
+{
+  "$schema": "./patterns.schema.json",
+  "version": 1,
+  "patterns": [
+    { "id": "quarter", "label": "Beat", "title": "Beat only", "description": "One click on every beat.", "tags": ["basic"], "division": 1, "slots": ["beat"] },
+    { "id": "eighth", "label": "8ths", "title": "Eighth notes", "description": "Two even clicks per beat.", "tags": ["basic"], "division": 2, "slots": ["beat", "sub"] },
+    { "id": "triplet", "label": "Triplet", "title": "Triplets", "description": "Three even clicks per beat.", "tags": ["basic", "triplet"], "division": 3, "slots": ["beat", "sub", "sub"] },
+    { "id": "sixteenth", "label": "16ths", "title": "Sixteenth notes", "description": "Four even clicks per beat.", "tags": ["basic"], "division": 4, "slots": ["beat", "sub", "sub", "sub"] },
+    { "id": "swing", "label": "Swing", "title": "Swing eighths", "description": "Long–short eighths on a triplet grid.", "tags": ["basic", "swing", "triplet"], "division": 3, "slots": ["beat", "rest", "sub"] },
+    { "id": "gallop", "label": "Gallop", "title": "Gallop", "description": "An eighth then two sixteenths in each beat.", "tags": ["sixteenths"], "division": 4, "slots": ["beat", "rest", "sub", "sub"] },
+    { "id": "reverse-gallop", "label": "Rev gallop", "title": "Reverse gallop", "description": "Two sixteenths then an eighth in each beat.", "tags": ["sixteenths"], "division": 4, "slots": ["beat", "sub", "sub", "rest"] },
+    { "id": "dotted", "label": "Dotted", "title": "Dotted eighth + sixteenth", "description": "A long note and a short pickup in each beat.", "tags": ["sixteenths"], "division": 4, "slots": ["beat", "rest", "rest", "sub"] },
+    { "id": "offbeat", "label": "Offbeat", "title": "Offbeats only", "description": "Silent on the beat, click on the and.", "tags": ["syncopated"], "division": 2, "slots": ["rest", "sub"] },
+    { "id": "tresillo", "label": "Tresillo", "title": "Tresillo (3+3+2)", "description": "The 3+3+2 grouping across two beats.", "tags": ["syncopated", "latin"], "division": 4, "beats": 2, "slots": ["beat", "rest", "rest", "beat", "rest", "rest", "beat", "rest"] }
+  ]
+}

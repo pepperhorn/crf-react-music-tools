@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "metronome-patterns.schema.json",
+  "title": "Metronome subdivision patterns",
+  "description": "A versioned list of rhythmic subdivision patterns for the metronome. Each pattern divides the beat into `division` equal slots and spans `beats` beats before it loops. CROSS-FIELD RULE (not expressible in JSON Schema, enforced by parsePatterns in model.ts): `slots` must contain exactly `division * beats` entries. Ids must also be unique; a later duplicate is ignored. String lengths are counted in Unicode code points, here and in the parser. Invalid entries are dropped individually, and a document with any other `version` is ignored entirely.",
+  "type": "object",
+  "required": ["version", "patterns"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": {
+      "const": 1,
+      "description": "Schema version. Must be 1."
+    },
+    "patterns": {
+      "type": "array",
+      "description": "Patterns in display order. The first five are shown as quick toggles; all of them appear in the presets list.",
+      "items": { "$ref": "#/$defs/pattern" }
+    }
+  },
+  "$defs": {
+    "pattern": {
+      "type": "object",
+      "required": ["id", "label", "division", "slots"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,31}$",
+          "description": "Unique slug. This is what gets stored in a user's settings, so do not rename a published pattern."
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 12,
+          "description": "Short name shown on the quick-toggle button (and on the Presets button when this pattern is selected)."
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "description": "Full name shown in the presets list. Defaults to `label`."
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 200,
+          "default": "",
+          "description": "One line describing the rhythm, shown under the title in the presets list."
+        },
+        "tags": {
+          "type": "array",
+          "maxItems": 8,
+          "default": [],
+          "description": "Tags for filtering the presets list. The parser trims and lowercases each tag, drops invalid or repeated ones without rejecting the pattern, and keeps at most 8.",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9 -]{0,19}$"
+          }
+        },
+        "division": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12,
+          "description": "Equal slots per beat. Every slot lasts 60 / bpm / division seconds."
+        },
+        "beats": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8,
+          "default": 1,
+          "description": "How many beats the pattern spans before it loops. The pattern always restarts from slot 0 at the start of a bar, so a pattern longer than what is left of the bar is cut short."
+        },
+        "slots": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 96,
+          "description": "Exactly `division * beats` entries, in time order. At least one must sound (`beat` or `sub`): an all-`rest` pattern is rejected.",
+          "contains": { "enum": ["beat", "sub"] },
+          "items": {
+            "enum": ["beat", "sub", "rest"],
+            "description": "beat: sounds at the emphasis level (soft / normal / accent) of the beat it falls inside. sub: quiet tick. rest: silent, time still advances. A beat the user has switched off silences every slot inside it."
+          }
+        }
+      }
+    }
+  }
+}
