@@ -1,0 +1,9 @@
+node_modules/
+dist/
+demo/dist/
+demo/.generated/
+*.tgz
+*.log
+.DS_Store
+.tmp/
+coverage/
