@@ -1,0 +1,85 @@
+/*
+ * Scoped base rules for crf-react-music-tools.
+ *
+ * The components were written against Tailwind's preflight. A global reset
+ * would restyle the host page, so the parts they rely on are applied here
+ * ONLY to the library's own roots (`.crf-music-tools`) and what is inside
+ * them.
+ *
+ * Specificity is one class (0,1,0) throughout: enough to beat a host's
+ * element selectors (`button { … }`), and equal to the utilities that follow
+ * in this file, which therefore win by source order.
+ */
+.crf-music-tools {
+  /* Inherited text properties a host page may have changed. */
+  font-family: var(--crfmt-font-ui, Poppins, ui-sans-serif, system-ui, sans-serif);
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+  font-variant: normal;
+  line-height: 1.5;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-align: left;
+  text-indent: 0;
+  text-transform: none;
+  text-shadow: none;
+  white-space: normal;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.crf-music-tools,
+.crf-music-tools :where(*),
+.crf-music-tools::before,
+.crf-music-tools::after,
+.crf-music-tools :where(*)::before,
+.crf-music-tools :where(*)::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0 solid;
+}
+
+/*
+ * Text properties inherit by default on these elements; saying so explicitly
+ * keeps a host's element rules (`span { … }`, `p { … }`) out. SVG elements
+ * are left alone: the meters set fonts through presentation attributes.
+ */
+.crf-music-tools :where(div, span, p) {
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-align: inherit;
+  text-indent: inherit;
+  text-shadow: inherit;
+  white-space: inherit;
+  color: inherit;
+}
+
+.crf-music-tools :where(button) {
+  font: inherit;
+  font-feature-settings: inherit;
+  font-variation-settings: inherit;
+  letter-spacing: inherit;
+  text-transform: none;
+  color: inherit;
+  border-radius: 0;
+  background-color: transparent;
+  background-image: none;
+  box-shadow: none;
+  opacity: 1;
+  appearance: button;
+  -webkit-appearance: button;
+  outline-offset: 0;
+}
+
+.crf-music-tools :where(svg) {
+  display: block;
+  vertical-align: middle;
+}
+
+.crf-music-tools :where([hidden]:not([hidden='until-found'])) {
+  display: none;
+}

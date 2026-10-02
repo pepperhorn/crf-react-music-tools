@@ -1,0 +1,18 @@
+/*
+ * Tailwind input for the precompiled stylesheet (see scripts/build-css.mjs).
+ *
+ * - Utilities only: no preflight, so nothing here resets the host page.
+ * - theme(inline): theme values are written into the utilities, so no
+ *   `:root { --spacing … }` variables are emitted that could clash with (or
+ *   depend on) a host's own Tailwind theme.
+ * - No automatic source detection: only the library's own sources are
+ *   scanned (not the demo, not the tests).
+ */
+@import 'tailwindcss/theme.css' theme(inline);
+@import 'tailwindcss/utilities.css' source(none);
+
+@source '../metronome';
+@source '../tuner';
+@source '../shared';
+@source not '../**/*.test.ts';
+@source not '../**/*.test.tsx';
