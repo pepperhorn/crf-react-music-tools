@@ -183,7 +183,7 @@ export function Tuner({ settings, onSettingsChange, onClose, audioContext, layou
   const closeBtn = onClose && (
     <button
       type="button"
-      className={`tuner-btn-close ${tiles ? `${T_BTN} ${compact ? 'w-11' : 'w-12'}` : `${BTN} w-11 rounded-full p-0`} shrink-0`}
+      className={`tuner-btn-close ${tiles ? `${T_BTN} ${compact ? 'w-11' : 'w-12'}` : `${BTN} w-11 p-0`} shrink-0`}
       aria-label="Close tuner"
       title="Close tuner"
       onClick={onClose}

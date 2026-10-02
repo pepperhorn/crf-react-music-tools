@@ -832,6 +832,44 @@ describe('Tuner', () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
+  it('vintage close button keeps the shared 14px button radius (no competing radius utility)', () => {
+    // `rounded-full` used to lose to the shared radius in the app this came from; with the
+    // radius written as `rounded-[14px]` it would win and turn the button into a circle.
+    for (const wide of [true, false]) {
+      stubTunerMedia({ wide });
+      const r = render(<Harness onClose={() => {}} initial={{ theme: 'vintage' }} />);
+      const radius = q('.tuner-btn-close')!.className.split(/\s+/).filter((c) => /^rounded(-|$)/.test(c));
+      expect(radius).toEqual(['rounded-[14px]']);
+      r.unmount();
+    }
+  });
+
+  it('no element carries two competing radius or border-width utilities', () => {
+    // Which of two same-property utilities wins is decided by stylesheet order, not class order,
+    // and that order changed when theme classes became explicit values.
+    const group = (c: string) =>
+      /^rounded(-(none|sm|md|lg|xl|2xl|3xl|full|\[.*\]))?$/.test(c) ? 'radius' : /^border(-(0|2|4|8|\[[\d.]+px\]))?$/.test(c) ? 'border-width' : null;
+    for (const wide of [true, false])
+      for (const theme of ['vintage', 'tiles'] as const)
+        for (const mode of ['simple', 'full'] as const) {
+          stubTunerMedia({ wide });
+          const r = render(<Harness onClose={() => {}} initial={{ theme, mode, instrument: 'strings' }} />);
+          for (const el of document.querySelectorAll('[class]')) {
+            const seen: Record<string, string[]> = {};
+            for (const c of (el.getAttribute('class') ?? '').split(/\s+/)) {
+              const g = group(c);
+              if (g) (seen[g] ??= []).push(c);
+            }
+            for (const [g, list] of Object.entries(seen)) {
+              // The compact LCD deliberately widens its 10px corner to 14px, as it always has.
+              if (g === 'radius' && el.classList.contains('tuner-lcd-compact')) expect(list).toEqual(['rounded-[10px]', 'rounded-[14px]']);
+              else expect(list, `${theme}/${mode}/${wide ? 'wide' : 'compact'} ${el.getAttribute('class')}`).toHaveLength(1);
+            }
+          }
+          r.unmount();
+        }
+  });
+
   it('MORE switches to full mode and LESS back to simple', async () => {
     const spy = vi.fn();
     render(<Harness spy={spy} />);
