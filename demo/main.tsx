@@ -9,6 +9,10 @@
  *   ?hostile=1 add an aggressive host stylesheet (check isolation the other way)
  *   ?header=0 hide the sticky site header that holds the toolbar
  *   ?align=start | end, ?offset=<px or CSS length> (or `none`): the toolbar's `align` / `topOffset`
+ *   ?strip=1   move the toolbar out of the header into a wider host strip in the page (with other controls in it)
+ *   ?sidebar=<px> add a fixed sidebar of that width, so the strip starts there (try 280 at an 820px viewport)
+ *   ?anchor=strip | bar: hang the panels under the host strip (`anchor="#demo-strip"`) or the bar (the default)
+ *   ?fit=shift | shrink, ?compact-top=below-bar | offset: the toolbar's `fit` / `compactTop`
  *   ?only=toolbar | metronome-simple | metronome-full | tuner-vintage | tuner-vintage-full | tuner-tiles | tuner-tiles-full
  */
 import { StrictMode, useState, type ReactNode } from 'react';
@@ -53,9 +57,65 @@ function Example({ id, title, children }: { id: string; title: string; children:
 }
 
 const HEADER_HEIGHT = 56;
-const align = params.get('align') === 'start' ? 'start' : 'end';
+const inStrip = params.get('strip') === '1';
+const sidebar = Math.max(0, Number(params.get('sidebar')) || 0);
+const align = params.has('align') ? (params.get('align') === 'start' ? 'start' : 'end') : inStrip ? 'start' : 'end';
+const anchor = params.get('anchor') === 'strip' ? '#demo-strip' : undefined;
+const fit = params.get('fit') === 'shrink' ? 'shrink' : undefined;
+const compactTop = params.get('compact-top') === 'offset' ? 'offset' : undefined;
 const offsetParam = params.get('offset');
 const topOffset = offsetParam === 'none' ? undefined : (offsetParam ?? HEADER_HEIGHT);
+
+function DemoBar({ onOpenChange }: { onOpenChange: (open: MusicTool | null) => void }) {
+  return (
+    <MusicToolsBar
+      align={align}
+      topOffset={topOffset}
+      anchor={anchor}
+      fit={fit}
+      compactTop={compactTop}
+      subtitle="Demo"
+      storageKeys={{ tuner: 'crf-music-tools-demo-toolbar-tuner', metronome: 'crf-music-tools-demo-toolbar-metronome' }}
+      onOpenChange={onOpenChange}
+    />
+  );
+}
+
+/**
+ * `?strip=1`: a host's own strip of controls in the page content, wider than
+ * the toolbar it contains. With `?anchor=strip` the panels line up with the
+ * strip instead of with the bar.
+ */
+function HostStrip({ onOpenChange }: { onOpenChange: (open: MusicTool | null) => void }) {
+  return (
+    <div
+      id="demo-strip"
+      className="demo-host-strip"
+      style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 16px', padding: '8px 12px', border: '1px solid #d6d3cd', borderRadius: 8 }}
+    >
+      <button id="demo-strip-button" className="demo-strip-button" type="button">
+        Host control
+      </button>
+      <span className="demo-strip-label" style={{ flex: 1 }}>
+        Host strip
+      </span>
+      <DemoBar onOpenChange={onOpenChange} />
+    </div>
+  );
+}
+
+/** `?sidebar=<px>`: a fixed sidebar; the page content starts to its right. */
+function Sidebar() {
+  return (
+    <aside
+      id="demo-sidebar"
+      className="demo-sidebar"
+      style={{ position: 'fixed', left: 0, top: 0, bottom: 0, width: sidebar, boxSizing: 'border-box', padding: 16, zIndex: 30, background: '#f4f2ee', borderRight: '1px solid #d6d3cd' }}
+    >
+      Sidebar
+    </aside>
+  );
+}
 
 /**
  * A fake site header, sticky at the top of a long page, with the toolbar at
@@ -88,13 +148,7 @@ function SiteHeader({ onOpenChange }: { onOpenChange: (open: MusicTool | null) =
       }}
     >
       <strong id="demo-header-title" className="demo-site-title">Site header</strong>
-      <MusicToolsBar
-        align={align}
-        topOffset={topOffset}
-        subtitle="Demo"
-        storageKeys={{ tuner: 'crf-music-tools-demo-toolbar-tuner', metronome: 'crf-music-tools-demo-toolbar-metronome' }}
-        onOpenChange={onOpenChange}
-      />
+      {!inStrip && <DemoBar onOpenChange={onOpenChange} />}
     </header>
   );
 }
@@ -104,7 +158,8 @@ function App() {
   const [closed, setClosed] = useState(0);
   const [openTool, setOpenTool] = useState<MusicTool | null>(null);
   return (
-    <main className="demo-page">
+    <main className="demo-page" style={sidebar ? { marginLeft: sidebar } : undefined}>
+      {sidebar > 0 && <Sidebar />}
       {params.get('header') !== '0' && <SiteHeader onOpenChange={setOpenTool} />}
       <h1 id="host-heading" className="demo-heading">@pepperhorn/react-music-tools</h1>
       <p id="host-paragraph" className="demo-intro">
@@ -118,11 +173,18 @@ function App() {
         Host element with the classes “flex grid fixed hidden border-2 uppercase p-4”.
       </div>
 
+      {inStrip && <HostStrip onOpenChange={setOpenTool} />}
+
       <Example id="toolbar" title="Header toolbar — MusicToolsBar">
         <p id="toolbar-note" className="demo-note">
           The two buttons at the right of the sticky header above are <code>&lt;MusicToolsBar align="end" topOffset={'{'}56{'}'} /&gt;</code>.
           The header has <code>overflow: hidden</code> and a <code>backdrop-filter</code>; the panels open below it, on screen, wherever the
           page is scrolled. Start the metronome and close its panel: it keeps playing and the button turns green.
+        </p>
+        <p id="toolbar-options" className="demo-note">
+          Options: <code>?strip=1</code> moves the bar into a wider host strip in the page; <code>?anchor=strip</code> hangs the panels under
+          that strip; <code>?sidebar=280&amp;fit=shrink</code> narrows the panel instead of moving it over the sidebar;{' '}
+          <code>?compact-top=offset</code> pins the phone card under the header.
         </p>
         <p id="toolbar-open" className="demo-note">Open panel: {openTool ?? 'none'}</p>
       </Example>

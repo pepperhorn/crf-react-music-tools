@@ -71,6 +71,9 @@ It renders two 40px icon buttons (a tuning fork and a metronome). Each opens its
 | `tools` | `('tuner' \| 'metronome')[]` | `['tuner', 'metronome']` | Which buttons to show, in order. |
 | `align` | `'start' \| 'end'` | `'start'` | From 640px, which edge of the bar the panel lines up with. Use `'end'` for a bar at the right of the header. A side that would leave the viewport flips to the other, and the panel is always kept 16px inside both edges. |
 | `topOffset` | `number \| string` | – | How much of the top of the viewport your sticky / fixed header covers: px, or any CSS length (`'4rem'`, `'var(--header-height)'`). See below. |
+| `anchor` | `RefObject<HTMLElement>` \| `HTMLElement` \| `string` | the bar | What the panels hang under. A ref, an element, or a CSS selector — the button's closest matching ancestor, else the first match in the document. See below. |
+| `fit` | `'shift' \| 'shrink'` | `'shift'` | From 640px, what happens when the panel does not fit at its aligned edge: keep its width and move it, or keep its edge and narrow it. See below. |
+| `compactTop` | `'below-bar' \| 'offset'` | `'below-bar'` | Under 640px, whether the card stays below the bar or is pinned 8px under `topOffset`. See below. |
 | `panelZIndex` | `number` | `1150` | z-index of the panels. |
 | `storageKeys` | `{ tuner?, metronome? }` | `'crf-music-tools-tuner'`, `'crf-music-tools-metronome'` | `localStorage` keys. `null` keeps that tool's settings in memory only. |
 | `defaultSettings` | `{ tuner?, metronome? }` | the library defaults | Used until stored values are found. |
@@ -87,7 +90,7 @@ For only one of the tools, or to place the buttons apart, use `<TunerToolButton>
 ### Where the panel goes
 
 - **Under 640px** it is a full-width card with 16px gutters.
-- **From 640px** it hangs under the bar, as wide as the tool (760px; 414px for the metronome's full mode) or as the viewport allows.
+- **From 640px** it hangs under the bar (or your `anchor`), as wide as the tool (760px; 414px for the metronome's full mode) or as the viewport allows.
 - It is never taller than the space below its top edge; it scrolls inside instead.
 - It is measured when it opens and again when the window is resized.
 
@@ -96,6 +99,26 @@ For only one of the tools, or to place the buttons apart, use `<TunerToolButton>
 ```tsx
 <MusicToolsBar topOffset={64} />                       {/* a 64px header */}
 <MusicToolsBar topOffset="var(--header-height)" />     {/* any CSS length */}
+```
+
+**A bar inside a wider strip — `anchor`.** By default the panel lines up with the bar itself (the nearest `.crfmt-toolbar` ancestor of the button; a tool button used on its own is its own anchor). When the bar is one item in a wider strip of your own controls, name the strip and the panel hangs under it instead: `align` then refers to the strip's edges, and the panel starts 8px below the strip's bottom edge.
+
+```tsx
+<div className="tools-strip" ref={stripRef}>
+  <button>…</button>
+  <MusicToolsBar anchor={stripRef} />          {/* a ref */}
+  <MusicToolsBar anchor=".tools-strip" />      {/* or a selector: the closest ancestor, else document.querySelector */}
+</div>
+```
+
+The anchor is looked up each time the panel is measured, so a ref that is filled after render works. Anything that does not resolve (an empty ref, no match, an invalid selector) falls back to the default.
+
+**A panel that does not fit — `fit`.** With the default, `'shift'`, the panel keeps its full width: it flips to the other edge of the anchor, or is moved until it is inside the viewport. In a layout with a sidebar that can put it over the sidebar — at an 820px viewport, a 760px panel anchored at x = 280 ends up at x = 44. `fit="shrink"` keeps the aligned edge where it is and narrows the panel to the room between that edge and the 16px gutter on the far side (524px in that example); it never flips. A panel narrower than the tool's wide layout is ever given otherwise (608px; 414px for the metronome's full mode) switches the tool to its stacked, phone layout, which fills any width. Below 320px of room, `'shrink'` gives up and behaves like `'shift'`.
+
+**A fixed top bar with the toolbar further down — `compactTop`.** Under 640px the card normally stays below the bar, like the anchored panel. If your phone layout has a fixed top bar and the toolbar sits lower in the page, `compactTop="offset"` pins the card 8px under `topOffset` wherever the bar is — `max(topOffset + 8px, env(safe-area-inset-top))` — and caps its height from there. The card can then cover the bar itself; it is closed with its × button or Escape. From 640px nothing changes. Without a `topOffset` the card sits at the 16px gutter.
+
+```tsx
+<MusicToolsBar topOffset="3rem" compactTop="offset" fit="shrink" anchor=".tools-strip" />
 ```
 
 **Headers that clip.** The panel is rendered in a portal on `document.body`, so a header with `overflow: hidden`, a `transform` or a `backdrop-filter` neither clips it nor becomes its containing block. The portal element carries the library's root class, so the stylesheet applies there too. Two consequences: custom properties for the *panel* (`--crfmt-font-*`, `--crfmt-toolbar-panel-z`) must be set on `:root` / `body` or through `panelClassName`, not on your header; and in the tab order the panel comes after the rest of the page (focus is moved into it on open and back to the button on close).
@@ -109,6 +132,9 @@ The buttons look right on a bare page — white with a hairline border and a dar
 | `--crfmt-toolbar-size` | `40px` | Width and height of a button. The hit area stays at least 44px. |
 | `--crfmt-toolbar-gap` | `8px` | Space between the buttons. |
 | `--crfmt-toolbar-radius` | `10px` | Corner radius. |
+| `--crfmt-toolbar-border-width` | `1px` | Border width of a button. |
+| `--crfmt-toolbar-cursor` | `pointer` | Cursor over a button. |
+| `--crfmt-toolbar-transition` | `color 150ms cubic-bezier(0.4,0,0.2,1), background-color …, border-color …` | The button's whole `transition` (`none` switches it off). |
 | `--crfmt-toolbar-button-bg` | `#fff` | Fill. |
 | `--crfmt-toolbar-button-hover-bg` | `#f4f2ee` | Fill on hover. |
 | `--crfmt-toolbar-button-border` | `#d6d3cd` | Border. |
@@ -118,6 +144,10 @@ The buttons look right on a bare page — white with a hairline border and a dar
 | `--crfmt-toolbar-running-hover-bg` | `#7fd0ad` | The same, on hover. |
 | `--crfmt-toolbar-active-border` | `#141210` | Border while open or running, and around the dot. |
 | `--crfmt-toolbar-dot-bg` | `#f86e6e` | The "running" dot. |
+| `--crfmt-toolbar-dot-size` | `10px` | Width and height of the dot. |
+| `--crfmt-toolbar-dot-border-width` | `1px` | Border width of the dot. |
+| `--crfmt-toolbar-dot-pulse-duration` | `1.6s` | Length of one pulse. |
+| `--crfmt-toolbar-dot-pulse-opacity` | `.35` | Opacity at the low point of the pulse (`1` keeps the dot steady). |
 | `--crfmt-toolbar-focus` | `#141210` | Focus ring (2px, offset 2px). Change it on a dark header. |
 | `--crfmt-toolbar-panel-z` | `1150` | z-index of the panels (set on `:root`, or use `panelZIndex`). The default is above the usual sticky headers and app bars and below the usual modals. |
 
@@ -150,7 +180,7 @@ A view transition replaces `document.body`, which would strand the panel's porta
 import '@pepperhorn/react-music-tools/styles.css';
 ```
 
-About 52 kB (7 kB gzipped). It is built to be a good guest:
+About 54 kB (8 kB gzipped). It is built to be a good guest:
 
 - **Nothing global.** Every rule only matches the library's root elements (class `crf-music-tools`) and what is inside them. There is no reset, no `html` / `body` / `button` rule, no `:root` variables. A host element that happens to have a class such as `flex` or `grid` is not affected.
 - **Nothing borrowed.** No theme tokens, no dependency on your root font size (lengths are in `px`), no dependency on your page's line height, alignment or font.
@@ -296,7 +326,7 @@ To build your own display, `useMicPitch(audioContext, options)` returns `{ statu
 - Metronome model: `DEFAULT_METRONOME_SETTINGS`, `parseMetronomeSettings`, `SIGNATURES`, `SOUNDS`, `BPM_MIN` / `BPM_MAX` / `BPM_DEFAULT`, `clampBpm`, `tempoName`, `withSignature`, `cycleAccent`, `defaultAccents`, `tapTempo`, `BUILTIN_PATTERNS`, `parsePatterns`, `resolvePattern`, `patternTags`, `filterPatterns`, `VOICES`, `createTickTimer`, and their types.
 - Tuner model: `DEFAULT_TUNER_SETTINGS`, `parseTunerSettings`, `INSTRUMENTS`, `STRINGS_VARIANTS`, `STRING_PRESETS`, `WIND_KEYS`, `TUNER_THEMES`, `TUNER_RESPONSES`, `RESPONSE_PROFILES`, `A4_MIN` / `A4_MAX` / `A4_DEFAULT`, `clampA4`, `detectPitch`, `freqToNote`, `midiToFreq`, `centsBetween`, `noteName`, `noteLabel`, `parseNote`, `getStrings`, `nearestString`, `writtenMidi`, `formatCents`, `formatHz`, and their types.
 - `METRONOME_STORAGE_KEY`, `TUNER_STORAGE_KEY`, `METRONOME_MESSAGES`.
-- Toolbar: `MusicToolsBar`, `TunerToolButton`, `MetronomeToolButton`, `TuningForkIcon`, `MetronomeIcon`, `DEFAULT_MUSIC_TOOLS_LABELS`, the positioning functions `computePanelPosition`, `panelLeft`, `panelTop`, `panelWidth` (with `PANEL_GAP`, `PANEL_GUTTER`), and their types.
+- Toolbar: `MusicToolsBar`, `TunerToolButton`, `MetronomeToolButton`, `TuningForkIcon`, `MetronomeIcon`, `DEFAULT_MUSIC_TOOLS_LABELS`, the positioning functions `computePanelPosition`, `panelBox`, `panelLeft`, `panelWidth`, `panelTop`, `panelCompactTop`, `panelLayout` (with `PANEL_GAP`, `PANEL_GUTTER`, `PANEL_MIN_WIDTH`, `PANEL_WIDE_MIN`), and their types.
 
 ## Metronome patterns
 
@@ -373,6 +403,6 @@ pnpm pack        # build, then create the tarball
 
 - `src/metronome`, `src/tuner` — the components, each self-contained. `src/toolbar` — the header toolbar built on them. `src/shared` — the persistence hook and shared class fragments.
 - `src/styles` — the Tailwind input, the scoped base rules and `fonts.css`. `scripts/build-css.mjs` compiles and scopes the stylesheet.
-- `demo/` — a page with every component in every mode and theme, under a sticky header that holds the toolbar. It has no CSS of its own, so it shows exactly what a bare host page gets. `?fonts=0` skips the fonts; `?hostile=1` adds an aggressive host stylesheet.
+- `demo/` — a page with every component in every mode and theme, under a sticky header that holds the toolbar. It has no CSS of its own, so it shows exactly what a bare host page gets. `?fonts=0` skips the fonts; `?hostile=1` adds an aggressive host stylesheet; `?strip=1`, `?sidebar=280`, `?anchor=strip`, `?fit=shrink` and `?compact-top=offset` exercise the toolbar's positioning options (the full list is at the top of `demo/main.tsx`).
 
 When you add or change classes in a component, keep them host-independent: explicit values instead of theme tokens (`border-[#141210]`, not `border-border`), and a semantic class name next to the utilities.

@@ -29,7 +29,16 @@ First version, extracted from an internal app.
   header with `overflow: hidden`, a transform or a `backdrop-filter` cannot
   clip them), stay inside the viewport (`align`, automatic flip, `topOffset`
   for sticky headers) and survive Astro view transitions. The buttons are
-  restylable through `--crfmt-toolbar-*` custom properties.
+  restylable through `--crfmt-toolbar-*` custom properties: size, gap, radius,
+  border width, colours, cursor, transition, and the running dot's size,
+  border width, pulse duration and pulse depth.
+- Toolbar positioning options, on `MusicToolsBar` and on the single tool
+  buttons: `anchor` (a ref, an element or a CSS selector) hangs the panels
+  under a wider host strip instead of under the bar; `fit="shrink"` narrows a
+  panel that does not fit instead of moving it, down to 320px, and switches
+  the tool to its stacked layout; `compactTop="offset"` pins the under-640px
+  card at `topOffset` wherever the bar is. The defaults are the bar,
+  `'shift'` and `'below-bar'`.
 - `TunerToolButton`, `MetronomeToolButton`, `TuningForkIcon`, `MetronomeIcon`
   and the positioning functions, for hosts that want only part of the toolbar.
 - Entry points `@pepperhorn/react-music-tools/metronome`,
@@ -40,5 +49,7 @@ First version, extracted from an internal app.
 - The close button is optional: it is rendered only when `onClose` is given.
 - The metronome has no subtitle unless the `subtitle` prop is set.
 - Classes that depended on the app's Tailwind theme are now explicit values.
+  The vintage tuner's close button keeps the 14px corner it had in the app
+  (it no longer carries a second, competing radius class).
 - Font stacks have system fallbacks and can be overridden with
   `--crfmt-font-*` custom properties.
