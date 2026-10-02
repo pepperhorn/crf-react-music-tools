@@ -38,9 +38,9 @@ export default defineConfig({
   plugins: [libraryStyles(), react()],
   resolve: {
     alias: [
-      { find: 'crf-react-music-tools/styles.css', replacement: generated },
-      { find: 'crf-react-music-tools/fonts.css', replacement: resolve(root, 'src/styles/fonts.css') },
-      { find: /^crf-react-music-tools$/, replacement: resolve(root, 'src/index.ts') },
+      { find: '@pepperhorn/react-music-tools/styles.css', replacement: generated },
+      { find: '@pepperhorn/react-music-tools/fonts.css', replacement: resolve(root, 'src/styles/fonts.css') },
+      { find: /^@pepperhorn\/react-music-tools$/, replacement: resolve(root, 'src/index.ts') },
     ],
   },
   server: { host: '0.0.0.0', port: 5180 },

@@ -16,12 +16,12 @@ First version, extracted from an internal app.
   their settings, audio and clean-up. The tuner asks for the microphone only
   after its Start button is pressed.
 - `useMetronome` and `usePersistentSettings` hooks.
-- `crf-react-music-tools/styles.css`: a precompiled stylesheet scoped to the
+- `@pepperhorn/react-music-tools/styles.css`: a precompiled stylesheet scoped to the
   library's own elements, usable without Tailwind CSS.
-- `crf-react-music-tools/fonts.css`: optional self-hosted fonts.
-- `crf-react-music-tools/patterns.schema.json`: JSON Schema for custom
+- `@pepperhorn/react-music-tools/fonts.css`: optional self-hosted fonts.
+- `@pepperhorn/react-music-tools/patterns.schema.json`: JSON Schema for custom
   metronome rhythm patterns.
-- Entry points `crf-react-music-tools/metronome` and `crf-react-music-tools/tuner`.
+- Entry points `@pepperhorn/react-music-tools/metronome` and `@pepperhorn/react-music-tools/tuner`.
 
 ### Changed (compared with the components in the app they came from)
 

@@ -2,8 +2,8 @@
  * Optional: the four typefaces the components are designed around, self-hosted
  * through @fontsource (no CDN). Import it once, next to styles.css:
  *
- *   import 'crf-react-music-tools/styles.css';
- *   import 'crf-react-music-tools/fonts.css';
+ *   import '@pepperhorn/react-music-tools/styles.css';
+ *   import '@pepperhorn/react-music-tools/fonts.css';
  *
  * Skip it if you load these fonts another way — or not at all: every font
  * stack falls back to system fonts.

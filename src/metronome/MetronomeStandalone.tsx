@@ -2,8 +2,8 @@
  * Drop-in metronome: the view, the audio engine and per-device settings in
  * one component.
  *
- *   import { MetronomeStandalone } from 'crf-react-music-tools';
- *   import 'crf-react-music-tools/styles.css';
+ *   import { MetronomeStandalone } from '@pepperhorn/react-music-tools';
+ *   import '@pepperhorn/react-music-tools/styles.css';
  *
  *   <MetronomeStandalone />
  *

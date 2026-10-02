@@ -2,8 +2,8 @@
  * Drop-in tuner: the view, the microphone and per-device settings in one
  * component.
  *
- *   import { TunerStandalone } from 'crf-react-music-tools';
- *   import 'crf-react-music-tools/styles.css';
+ *   import { TunerStandalone } from '@pepperhorn/react-music-tools';
+ *   import '@pepperhorn/react-music-tools/styles.css';
  *
  *   <TunerStandalone />
  *

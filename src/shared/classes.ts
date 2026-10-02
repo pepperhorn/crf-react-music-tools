@@ -3,7 +3,7 @@
  *
  * `ROOT_CLASS` goes on every root element the library renders (each chassis,
  * the presets overlay, the standalone wrappers). The precompiled stylesheet
- * (`crf-react-music-tools/styles.css`) only matches elements at or under that
+ * (`@pepperhorn/react-music-tools/styles.css`) only matches elements at or under that
  * class, so none of its rules can restyle the host page.
  *
  * Fonts are literal stacks wrapped in a CSS variable, so a host can swap a

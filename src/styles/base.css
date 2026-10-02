@@ -1,5 +1,5 @@
 /*
- * Scoped base rules for crf-react-music-tools.
+ * Scoped base rules for @pepperhorn/react-music-tools.
  *
  * The components were written against Tailwind's preflight. A global reset
  * would restyle the host page, so the parts they rely on are applied here

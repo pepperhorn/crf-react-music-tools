@@ -18,11 +18,11 @@ import {
   TunerStandalone,
   type MetronomeSettings,
   type TunerSettings,
-} from 'crf-react-music-tools';
-import 'crf-react-music-tools/styles.css';
+} from '@pepperhorn/react-music-tools';
+import '@pepperhorn/react-music-tools/styles.css';
 
 const params = new URLSearchParams(location.search);
-if (params.get('fonts') !== '0') void import('crf-react-music-tools/fonts.css');
+if (params.get('fonts') !== '0') void import('@pepperhorn/react-music-tools/fonts.css');
 if (params.get('hostile') === '1') {
   const style = document.createElement('style');
   style.textContent = `
@@ -54,7 +54,7 @@ function App() {
   const [closed, setClosed] = useState(0);
   return (
     <main className="demo-page">
-      <h1 id="host-heading" className="demo-heading">crf-react-music-tools</h1>
+      <h1 id="host-heading" className="demo-heading">@pepperhorn/react-music-tools</h1>
       <p id="host-paragraph" className="demo-intro">
         This heading, paragraph and button belong to the host page. The library stylesheet must leave them alone.
       </p>

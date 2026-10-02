@@ -1,4 +1,4 @@
-# crf-react-music-tools
+# @pepperhorn/react-music-tools
 
 A **metronome** and an **instrument tuner** as drop-in React components.
 
@@ -9,14 +9,14 @@ A **metronome** and an **instrument tuner** as drop-in React components.
 - No runtime dependencies beyond React (the optional fonts come from `@fontsource`).
 
 > **Status: 0.1.0.** Extracted from an internal app, where both components are in daily use. The API may still change before 1.0.
->
-> **Licence: to be decided.** No licence has been chosen yet, so no rights are granted until one is added.
+
+Licence: [MIT](./LICENSE).
 
 ## Install
 
 ```sh
-pnpm add crf-react-music-tools
-# or: npm install crf-react-music-tools
+pnpm add @pepperhorn/react-music-tools
+# or: npm install @pepperhorn/react-music-tools
 ```
 
 React 18 or 19 is a peer dependency.
@@ -24,9 +24,9 @@ React 18 or 19 is a peer dependency.
 ## Quick start
 
 ```tsx
-import { MetronomeStandalone, TunerStandalone } from 'crf-react-music-tools';
-import 'crf-react-music-tools/styles.css';
-import 'crf-react-music-tools/fonts.css'; // optional, see Fonts
+import { MetronomeStandalone, TunerStandalone } from '@pepperhorn/react-music-tools';
+import '@pepperhorn/react-music-tools/styles.css';
+import '@pepperhorn/react-music-tools/fonts.css'; // optional, see Fonts
 
 export function Tools() {
   return (
@@ -40,14 +40,14 @@ export function Tools() {
 
 That is all: each component owns its settings, its audio and its clean-up.
 
-Each tool is also available on its own entry point, `crf-react-music-tools/metronome` and `crf-react-music-tools/tuner`.
+Each tool is also available on its own entry point, `@pepperhorn/react-music-tools/metronome` and `@pepperhorn/react-music-tools/tuner`.
 
 ## Styles
 
 ### The precompiled stylesheet (default)
 
 ```ts
-import 'crf-react-music-tools/styles.css';
+import '@pepperhorn/react-music-tools/styles.css';
 ```
 
 About 45 kB (6 kB gzipped). It is built to be a good guest:
@@ -66,7 +66,7 @@ You can let your own build generate the classes instead of importing `styles.css
 
 ```css
 @import 'tailwindcss';
-@source '../node_modules/crf-react-music-tools/dist';
+@source '../node_modules/@pepperhorn/react-music-tools/dist';
 ```
 
 Then do **not** import `styles.css`. Notes for this route:
@@ -79,7 +79,7 @@ Then do **not** import `styles.css`. Notes for this route:
 The designs use four typefaces: **Poppins** (400–700), **Archivo Black**, **Space Mono** (400, 700) and **VT323**. They are not part of `styles.css`.
 
 ```ts
-import 'crf-react-music-tools/fonts.css'; // optional
+import '@pepperhorn/react-music-tools/fonts.css'; // optional
 ```
 
 `fonts.css` imports them from `@fontsource/*`, which this package lists as regular dependencies so the import resolves without any extra install (including under pnpm's strict `node_modules`). Nothing is downloaded by the browser, and nothing is added to your bundle, unless you import this file. Your bundler must be able to follow CSS `@import`s into `node_modules` (Vite and Next.js do).
@@ -136,7 +136,7 @@ Use these when your app owns the state — a settings store, a floating panel, p
 `Metronome` is presentational: no audio, no storage.
 
 ```tsx
-import { Metronome, useMetronome } from 'crf-react-music-tools';
+import { Metronome, useMetronome } from '@pepperhorn/react-music-tools';
 
 function MyMetronome() {
   const metronome = useMetronome({ storageKey: 'my-app-metronome' });
@@ -170,7 +170,7 @@ To drive it without the hook, use `MetronomeEngine` directly: `engine.start(sett
 Mounting `<Tuner>` starts the microphone; unmounting releases it.
 
 ```tsx
-import { Tuner, createTunerAudioContext, usePersistentSettings, parseTunerSettings, DEFAULT_TUNER_SETTINGS } from 'crf-react-music-tools';
+import { Tuner, createTunerAudioContext, usePersistentSettings, parseTunerSettings, DEFAULT_TUNER_SETTINGS } from '@pepperhorn/react-music-tools';
 
 function MyTuner() {
   const [settings, setSettings] = usePersistentSettings('my-app-tuner', parseTunerSettings, DEFAULT_TUNER_SETTINGS);
@@ -207,7 +207,7 @@ The subdivision buttons and the Presets list are data. A pattern divides the bea
 
 ```json
 {
-  "$schema": "./node_modules/crf-react-music-tools/dist/patterns.schema.json",
+  "$schema": "./node_modules/@pepperhorn/react-music-tools/dist/patterns.schema.json",
   "version": 1,
   "patterns": [
     { "id": "quarter", "label": "Beat", "title": "Beat only", "description": "One click on every beat.", "tags": ["basic"], "division": 1, "slots": ["beat"] },
@@ -231,7 +231,7 @@ The subdivision buttons and the Presets list are data. A pattern divides the bea
 The first five patterns are the quick toggles; all of them appear under Presets.
 
 ```tsx
-import { MetronomeStandalone, parsePatterns } from 'crf-react-music-tools';
+import { MetronomeStandalone, parsePatterns } from '@pepperhorn/react-music-tools';
 import myPatterns from './patterns.json';
 
 const PATTERNS = parsePatterns(myPatterns); // once, at module level
@@ -239,7 +239,7 @@ const PATTERNS = parsePatterns(myPatterns); // once, at module level
 <MetronomeStandalone patterns={PATTERNS} />;
 ```
 
-`parsePatterns` validates the document and drops invalid entries one by one, so a bad pattern never breaks the metronome. The JSON Schema is published as `crf-react-music-tools/patterns.schema.json` (`dist/patterns.schema.json` in the package; `src/metronome/patterns.schema.json` in this repository), and the built-in list is `src/metronome/patterns.json`.
+`parsePatterns` validates the document and drops invalid entries one by one, so a bad pattern never breaks the metronome. The JSON Schema is published as `@pepperhorn/react-music-tools/patterns.schema.json` (`dist/patterns.schema.json` in the package; `src/metronome/patterns.schema.json` in this repository), and the built-in list is `src/metronome/patterns.json`.
 
 ## Server rendering
 

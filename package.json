@@ -1,7 +1,8 @@
 {
-  "name": "crf-react-music-tools",
+  "name": "@pepperhorn/react-music-tools",
   "version": "0.1.0",
   "description": "A metronome and an instrument tuner as drop-in React components, with a precompiled stylesheet.",
+  "license": "MIT",
   "type": "module",
   "packageManager": "pnpm@9.15.0",
   "engines": {
@@ -28,7 +29,8 @@
   ],
   "files": [
     "dist",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "LICENSE"
   ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -88,5 +90,8 @@
     "typescript": "^5.7.2",
     "vite": "^8.3.2",
     "vitest": "^5.0.3"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

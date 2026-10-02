@@ -17,7 +17,7 @@
     "noEmit": true,
     "types": ["node"],
     "paths": {
-      "crf-react-music-tools": ["./src/index.ts"]
+      "@pepperhorn/react-music-tools": ["./src/index.ts"]
     }
   },
   "include": ["src", "demo", "scripts", "*.ts"]
