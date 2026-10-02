@@ -22,9 +22,9 @@ import { usePersistentSettings } from '../shared/usePersistentSettings';
 import { ROOT_CLASS } from '../shared/classes';
 import { TuningForkIcon } from './icons';
 import { DEFAULT_MUSIC_TOOLS_LABELS, type MusicToolsLabels } from './labels';
-import type { ToolbarAlign } from './position';
+import type { ToolbarAlign, ToolbarCompactTop, ToolbarFit } from './position';
 import { toolToggleClass } from './tool-toggle';
-import { ToolPanel, useToolPanel } from './useToolPanel';
+import { ToolPanel, useToolPanel, type ToolbarAnchor } from './useToolPanel';
 
 /** Props shared by both tool buttons. */
 export interface ToolButtonProps {
@@ -36,6 +36,28 @@ export interface ToolButtonProps {
    * bar, when that is lower). Default: 8px below the bar.
    */
   topOffset?: number | string;
+  /**
+   * What the panel hangs under, when that is not the bar (or, for a button on
+   * its own, the button): a ref, an element, or a CSS selector — the button's
+   * closest matching ancestor, else the first match in the document. Use it
+   * when the bar sits in a wider strip of your own and the panel should line
+   * up with that strip. Anything that does not resolve falls back to the default.
+   */
+  anchor?: ToolbarAnchor | null;
+  /**
+   * From 640px, when the panel does not fit at its aligned edge. `'shift'`
+   * (default) keeps its width and flips or moves it into the viewport.
+   * `'shrink'` keeps the aligned edge at the anchor and narrows the panel to
+   * the room that is left (the tool then uses its stacked layout), down to
+   * 320px; with less room than that it shifts.
+   */
+  fit?: ToolbarFit;
+  /**
+   * Under 640px. `'below-bar'` (default) keeps the card below the bar.
+   * `'offset'` pins it 8px under `topOffset` wherever the bar is — for a fixed
+   * top bar with the toolbar further down the page.
+   */
+  compactTop?: ToolbarCompactTop;
   /** z-index of the panel. Default 1150 (`--crfmt-toolbar-panel-z`). */
   panelZIndex?: number;
   /** Called when the panel opens or closes. */
@@ -68,6 +90,9 @@ export function TunerToolButton({
   labels,
   align,
   topOffset,
+  anchor,
+  fit,
+  compactTop,
   panelZIndex,
   onOpenChange,
   className = '',
@@ -75,7 +100,7 @@ export function TunerToolButton({
   panelClassName = '',
 }: TunerToolButtonProps) {
   const [settings, setSettings] = usePersistentSettings<TunerSettings>(storageKey, parseTunerSettings, defaultSettings);
-  const panel = useToolPanel({ maxWidth: TUNER_WIDTH, align, topOffset, onOpenChange });
+  const panel = useToolPanel({ maxWidth: TUNER_WIDTH, align, topOffset, anchor, fit, compactTop, onOpenChange });
   const { open, toggleRef, panelId } = panel;
   // The context made in the opening click; <Tuner> owns (and closes) it.
   const [ctx, setCtx] = useState<AudioContext | null>(null);
@@ -115,7 +140,7 @@ export function TunerToolButton({
         <TuningForkIcon />
       </button>
       <ToolPanel panel={panel} label={text.tuner} zIndex={panelZIndex} className={`crfmt-tool-panel-tuner ${look} ${panelClassName}`}>
-        <Tuner settings={settings} onSettingsChange={change} onClose={panel.close} audioContext={ctx} />
+        <Tuner settings={settings} onSettingsChange={change} onClose={panel.close} audioContext={ctx} layout={panel.layout} />
       </ToolPanel>
     </div>
   );

@@ -11,7 +11,7 @@
 export type ToolToggleState = 'idle' | 'open' | 'running';
 
 const BASE =
-  "crfmt-tool-toggle relative inline-flex h-[var(--crfmt-toolbar-size,40px)] w-[var(--crfmt-toolbar-size,40px)] shrink-0 cursor-pointer select-none touch-manipulation items-center justify-center rounded-[var(--crfmt-toolbar-radius,10px)] border text-[color:var(--crfmt-toolbar-button-color,#141210)] transition-colors [-webkit-touch-callout:none] before:absolute before:inset-[min(-3px,calc((var(--crfmt-toolbar-size,40px)-44px)/2))] before:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--crfmt-toolbar-focus,#141210)]";
+  "crfmt-tool-toggle relative inline-flex h-[var(--crfmt-toolbar-size,40px)] w-[var(--crfmt-toolbar-size,40px)] shrink-0 cursor-[var(--crfmt-toolbar-cursor,pointer)] select-none touch-manipulation items-center justify-center rounded-[var(--crfmt-toolbar-radius,10px)] border-[length:var(--crfmt-toolbar-border-width,1px)] text-[color:var(--crfmt-toolbar-button-color,#141210)] [transition:var(--crfmt-toolbar-transition,color_150ms_cubic-bezier(0.4,0,0.2,1),background-color_150ms_cubic-bezier(0.4,0,0.2,1),border-color_150ms_cubic-bezier(0.4,0,0.2,1))] [-webkit-touch-callout:none] before:absolute before:inset-[min(-3px,calc((var(--crfmt-toolbar-size,40px)-44px)/2))] before:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--crfmt-toolbar-focus,#141210)]";
 
 const ACTIVE_BORDER = 'border-[color:var(--crfmt-toolbar-active-border,#141210)]';
 

@@ -7,8 +7,9 @@
  *   the page, in a `MusicToolsBar` or on its own. What closing means beyond
  *   hiding the panel is the tool's business: the tuner unmounts and releases
  *   the microphone, the metronome keeps playing.
- * - Position: measured from the bar when the panel opens and again on resize
- *   (see position.ts). Under 640px the stylesheet makes it a full-width card.
+ * - Position: measured from the bar — or the host's `anchor` — when the panel
+ *   opens and again on resize (see position.ts). Under 640px the stylesheet
+ *   makes it a full-width card.
  * - Escape closes the panel only when focus is inside it or on its button, and
  *   never when another dialog owns the key.
  * - Portal: the panel is rendered into its own element on `document.body`, so
@@ -32,7 +33,17 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type 
 import { createPortal } from 'react-dom';
 import { ROOT_CLASS } from '../shared/classes';
 import { OverlayContainerContext } from '../shared/overlay-container';
-import { PANEL_GAP, PANEL_GUTTER, computePanelPosition, type AnchorRect, type PanelPosition, type ToolbarAlign } from './position';
+import {
+  PANEL_GAP,
+  PANEL_GUTTER,
+  computePanelPosition,
+  panelLayout,
+  type AnchorRect,
+  type PanelPosition,
+  type ToolbarAlign,
+  type ToolbarCompactTop,
+  type ToolbarFit,
+} from './position';
 
 /** Class of the bar the panels are anchored under. A tool button on its own is its own anchor. */
 export const TOOLBAR_CLASS = 'crfmt-toolbar';
@@ -49,13 +60,22 @@ export const AFTER_BODY_SWAP_EVENT = 'astro:after-swap';
 const PORTAL_CLASS = `${ROOT_CLASS} crfmt-tool-portal fixed left-0 top-0 z-[var(--crfmt-toolbar-panel-z,1150)]`;
 
 /**
+ * What the panels hang under, when it is not the bar: a ref, an element, or a
+ * CSS selector (the button's closest matching ancestor, else the first match
+ * in the document).
+ */
+export type ToolbarAnchor = RefObject<HTMLElement | null> | HTMLElement | string;
+
+/**
  * Fixed; under 640px a card with 16px gutters, from 640px anchored at the
  * computed left / width. Never taller than the viewport below its top edge:
- * it scrolls inside. No z-index of its own — the portal element has it — so
- * the presets dialog, portalled beside it, stacks above.
+ * it scrolls inside. Under 640px the top is `--crfmt-panel-top-compact` when
+ * the host pinned the card at its header offset, else the same top as from
+ * 640px. No z-index of its own — the portal element has it — so the presets
+ * dialog, portalled beside it, stacks above.
  */
 const PANEL_CLASS =
-  'crfmt-tool-panel fixed left-4 right-4 top-[var(--crfmt-panel-top)] max-h-[calc(100dvh-var(--crfmt-panel-top)-16px)] overflow-y-auto overscroll-contain outline-none sm:left-[var(--crfmt-panel-left)] sm:right-auto sm:w-[var(--crfmt-panel-width)]';
+  'crfmt-tool-panel fixed left-4 right-4 top-[var(--crfmt-panel-top-compact,var(--crfmt-panel-top))] max-h-[calc(100dvh-var(--crfmt-panel-top-compact,var(--crfmt-panel-top))-16px)] overflow-y-auto overscroll-contain outline-none sm:left-[var(--crfmt-panel-left)] sm:right-auto sm:top-[var(--crfmt-panel-top)] sm:max-h-[calc(100dvh-var(--crfmt-panel-top)-16px)] sm:w-[var(--crfmt-panel-width)]';
 
 // ---- one panel at a time -------------------------------------------------
 
@@ -76,9 +96,26 @@ interface Measured {
   viewportWidth: number;
 }
 
-function measure(toggle: HTMLElement | null): Measured {
-  const bar = toggle?.closest<HTMLElement>(`.${TOOLBAR_CLASS}`) ?? toggle;
-  const rect = bar?.getBoundingClientRect();
+/**
+ * The element the panel hangs under: the host's `anchor` when it resolves to
+ * one, else the bar the button is in, else the button itself.
+ */
+export function resolveAnchor(toggle: HTMLElement | null, anchor?: ToolbarAnchor | null): HTMLElement | null {
+  let el: HTMLElement | null = null;
+  if (typeof anchor === 'string') {
+    try {
+      el = toggle?.closest<HTMLElement>(anchor) ?? document.querySelector<HTMLElement>(anchor);
+    } catch {
+      // Not a valid selector: as if not given.
+    }
+  } else if (anchor) {
+    el = 'nodeType' in anchor ? anchor : anchor.current;
+  }
+  return el ?? toggle?.closest<HTMLElement>(`.${TOOLBAR_CLASS}`) ?? toggle;
+}
+
+function measure(toggle: HTMLElement | null, anchor?: ToolbarAnchor | null): Measured {
+  const rect = resolveAnchor(toggle, anchor)?.getBoundingClientRect();
   // Without the scrollbar where there is one.
   const viewportWidth = document.documentElement.clientWidth || window.innerWidth || 0;
   return {
@@ -105,6 +142,9 @@ export interface UseToolPanelOptions {
   maxWidth: number;
   align?: ToolbarAlign;
   topOffset?: number | string;
+  anchor?: ToolbarAnchor | null;
+  fit?: ToolbarFit;
+  compactTop?: ToolbarCompactTop;
   /** Called from the event that opened or closed the panel. */
   onOpenChange?: (open: boolean) => void;
 }
@@ -113,6 +153,8 @@ export interface ToolPanelState {
   open: boolean;
   /** Where the panel goes; `null` while closed. */
   position: PanelPosition | null;
+  /** `'compact'` when `fit: 'shrink'` made the panel too narrow for the tool's wide layout; pass it to the tool. */
+  layout: 'compact' | undefined;
   panelId: string;
   toggleRef: RefObject<HTMLButtonElement | null>;
   panelRef: RefObject<HTMLDivElement | null>;
@@ -126,7 +168,7 @@ export interface ToolPanelState {
   remeasure: () => void;
 }
 
-export function useToolPanel({ maxWidth, align, topOffset, onOpenChange }: UseToolPanelOptions): ToolPanelState {
+export function useToolPanel({ maxWidth, align, topOffset, anchor, fit, compactTop, onOpenChange }: UseToolPanelOptions): ToolPanelState {
   const [measured, setMeasured] = useState<Measured | null>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -137,9 +179,12 @@ export function useToolPanel({ maxWidth, align, topOffset, onOpenChange }: UseTo
   const openRef = useRef(false);
   const onOpenChangeRef = useRef(onOpenChange);
   onOpenChangeRef.current = onOpenChange;
+  // Resolved at each measure, so a ref filled after render and a selector both work.
+  const anchorRef = useRef(anchor);
+  anchorRef.current = anchor;
 
   const openPanel = useCallback(() => {
-    setMeasured(measure(toggleRef.current));
+    setMeasured(measure(toggleRef.current, anchorRef.current));
     if (!openRef.current) {
       openRef.current = true;
       // Before the slot changes hands, so a bar hears "this one opened" before "that one closed".
@@ -161,7 +206,7 @@ export function useToolPanel({ maxWidth, align, topOffset, onOpenChange }: UseTo
     toggleRef.current?.focus();
   }, [hide]);
 
-  const remeasure = useCallback(() => setMeasured((m) => (m ? measure(toggleRef.current) : m)), []);
+  const remeasure = useCallback(() => setMeasured((m) => (m ? measure(toggleRef.current, anchorRef.current) : m)), []);
 
   // Another tool took the slot: close this panel, leaving focus where it went.
   // Unmounting while open frees the slot (effects never run on the server).
@@ -202,9 +247,10 @@ export function useToolPanel({ maxWidth, align, topOffset, onOpenChange }: UseTo
     };
   }, [open, close, remeasure]);
 
-  const position = measured ? computePanelPosition({ ...measured, maxWidth, align, topOffset }) : null;
+  const position = measured ? computePanelPosition({ ...measured, maxWidth, align, topOffset, fit, compactTop }) : null;
+  const layout = position ? panelLayout(position.width, maxWidth) : undefined;
 
-  return { open, position, panelId, toggleRef, panelRef, openPanel, close, hide, remeasure };
+  return { open, position, layout, panelId, toggleRef, panelRef, openPanel, close, hide, remeasure };
 }
 
 // ---- the panel -----------------------------------------------------------
@@ -276,11 +322,12 @@ function OpenToolPanel({ panel, label, className = '', zIndex, children }: ToolP
   }, [host, panelRef, toggleRef, hide, remeasure]);
 
   if (!host || !panel.position) return null;
-  const { left, top, width } = panel.position;
+  const { left, top, width, compactTop } = panel.position;
   const style = {
     '--crfmt-panel-left': `${left}px`,
     '--crfmt-panel-top': top,
     '--crfmt-panel-width': `${width}px`,
+    ...(compactTop !== undefined ? { '--crfmt-panel-top-compact': compactTop } : {}),
   } as CSSProperties;
 
   return createPortal(

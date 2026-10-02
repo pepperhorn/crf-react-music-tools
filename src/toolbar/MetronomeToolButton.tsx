@@ -42,7 +42,7 @@ const SIMPLE_WIDTH = 760;
 const FULL_WIDTH = 414;
 
 /** Injected while the dot is shown: the stylesheet is utilities only, and this must also work when the host's Tailwind generates them. */
-const PULSE_KEYFRAMES = '@keyframes crfmt-toolbar-pulse{50%{opacity:.35}}';
+const PULSE_KEYFRAMES = '@keyframes crfmt-toolbar-pulse{50%{opacity:var(--crfmt-toolbar-dot-pulse-opacity,.35)}}';
 
 export function MetronomeToolButton({
   storageKey,
@@ -50,6 +50,9 @@ export function MetronomeToolButton({
   labels,
   align,
   topOffset,
+  anchor,
+  fit,
+  compactTop,
   panelZIndex,
   onOpenChange,
   className = '',
@@ -59,7 +62,7 @@ export function MetronomeToolButton({
 }: MetronomeToolButtonProps) {
   const metronome = useMetronome({ ...options, ...(storageKey !== undefined ? { storageKey } : {}) });
   const { running, settings, onStop } = metronome;
-  const panel = useToolPanel({ maxWidth: settings.mode === 'full' ? FULL_WIDTH : SIMPLE_WIDTH, align, topOffset, onOpenChange });
+  const panel = useToolPanel({ maxWidth: settings.mode === 'full' ? FULL_WIDTH : SIMPLE_WIDTH, align, topOffset, anchor, fit, compactTop, onOpenChange });
   const { open, toggleRef, panelId } = panel;
   const text = { ...DEFAULT_MUSIC_TOOLS_LABELS, ...labels };
 
@@ -93,14 +96,14 @@ export function MetronomeToolButton({
         <MetronomeIcon />
         {running && (
           <span
-            className="crfmt-tool-toggle-dot pointer-events-none absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border border-[color:var(--crfmt-toolbar-active-border,#141210)] bg-[var(--crfmt-toolbar-dot-bg,#f86e6e)] motion-safe:animate-[crfmt-toolbar-pulse_1.6s_ease-in-out_infinite]"
+            className="crfmt-tool-toggle-dot pointer-events-none absolute -right-1 -top-1 h-[var(--crfmt-toolbar-dot-size,10px)] w-[var(--crfmt-toolbar-dot-size,10px)] rounded-full border-[length:var(--crfmt-toolbar-dot-border-width,1px)] border-[color:var(--crfmt-toolbar-active-border,#141210)] bg-[var(--crfmt-toolbar-dot-bg,#f86e6e)] motion-safe:animate-[crfmt-toolbar-pulse_var(--crfmt-toolbar-dot-pulse-duration,1.6s)_ease-in-out_infinite]"
             aria-hidden="true"
           />
         )}
       </button>
       {running && <style>{PULSE_KEYFRAMES}</style>}
       <ToolPanel panel={panel} label={text.metronome} zIndex={panelZIndex} className={`crfmt-tool-panel-metronome ${panelClassName}`}>
-        <Metronome {...metronome} onClose={panel.close} subtitle={subtitle} />
+        <Metronome {...metronome} onClose={panel.close} subtitle={subtitle} layout={panel.layout} />
       </ToolPanel>
     </div>
   );

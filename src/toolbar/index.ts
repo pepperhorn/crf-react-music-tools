@@ -9,5 +9,18 @@ export { MetronomeIcon, TuningForkIcon } from './icons';
 export type { ToolIconProps } from './icons';
 export { DEFAULT_MUSIC_TOOLS_LABELS } from './labels';
 export type { MusicToolsLabels } from './labels';
-export { computePanelPosition, panelLeft, panelTop, panelWidth, PANEL_GAP, PANEL_GUTTER } from './position';
-export type { AnchorRect, PanelPosition, PanelPositionInput, ToolbarAlign } from './position';
+export {
+  computePanelPosition,
+  panelBox,
+  panelCompactTop,
+  panelLayout,
+  panelLeft,
+  panelTop,
+  panelWidth,
+  PANEL_GAP,
+  PANEL_GUTTER,
+  PANEL_MIN_WIDTH,
+  PANEL_WIDE_MIN,
+} from './position';
+export type { AnchorRect, PanelBoxInput, PanelPosition, PanelPositionInput, ToolbarAlign, ToolbarCompactTop, ToolbarFit } from './position';
+export type { ToolbarAnchor } from './useToolPanel';

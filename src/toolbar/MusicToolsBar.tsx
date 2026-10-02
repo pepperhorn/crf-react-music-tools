@@ -27,7 +27,7 @@ export type MusicTool = 'tuner' | 'metronome';
 const DEFAULT_TOOLS: readonly MusicTool[] = ['tuner', 'metronome'];
 
 export interface MusicToolsBarProps
-  extends Pick<ToolButtonProps, 'align' | 'topOffset' | 'panelZIndex' | 'buttonClassName' | 'panelClassName'>,
+  extends Pick<ToolButtonProps, 'align' | 'topOffset' | 'anchor' | 'fit' | 'compactTop' | 'panelZIndex' | 'buttonClassName' | 'panelClassName'>,
     Pick<UseMetronomeOptions, 'patterns' | 'createEngine' | 'messages'> {
   /** Which tools to show, in order. Default `['tuner', 'metronome']`. */
   tools?: readonly MusicTool[];

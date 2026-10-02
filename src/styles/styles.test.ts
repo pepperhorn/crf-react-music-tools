@@ -47,6 +47,18 @@ describe('styles.css', () => {
     // The enlarged hit area and the capped height survive as valid calc().
     expect(css).toMatch(/inset: min\(-3px, calc\(\(var\(--crfmt-toolbar-size,40px\) - 44px\) \/ 2\)\)/);
     expect(css).toMatch(/max-height: calc\(100dvh - var\(--crfmt-panel-top\) - 16px\)/);
+    expect(css).toMatch(/max-height: calc\(100dvh - var\(--crfmt-panel-top-compact,var\(--crfmt-panel-top\)\) - 16px\)/);
+    expect(css).toMatch(/top: var\(--crfmt-panel-top-compact,var\(--crfmt-panel-top\)\)/);
+    // The styling hooks keep the values they replaced as fallbacks, on the right properties.
+    expect(css).toMatch(/border-width: var\(--crfmt-toolbar-border-width,1px\)/);
+    expect(css).toMatch(/border-width: var\(--crfmt-toolbar-dot-border-width,1px\)/);
+    expect(css).toMatch(/cursor: var\(--crfmt-toolbar-cursor,pointer\)/);
+    expect(css).toMatch(/height: var\(--crfmt-toolbar-dot-size,10px\)/);
+    expect(css).toMatch(/width: var\(--crfmt-toolbar-dot-size,10px\)/);
+    expect(css).toMatch(
+      /transition: var\(--crfmt-toolbar-transition,color 150ms cubic-bezier\(0\.4,0,0\.2,1\),background-color 150ms cubic-bezier\(0\.4,0,0\.2,1\),border-color 150ms cubic-bezier\(0\.4,0,0\.2,1\)\)/,
+    );
+    expect(css).toMatch(/animation: crfmt-toolbar-pulse var\(--crfmt-toolbar-dot-pulse-duration,1\.6s\) ease-in-out infinite/);
     // The running dot only pulses for people who have not asked for reduced motion.
     const pulse = rules.filter((r) => r.nodes.some((n) => n.type === 'decl' && /crfmt-toolbar-pulse/.test(n.value)));
     expect(pulse.length).toBeGreaterThan(0);

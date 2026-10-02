@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { StrictMode } from 'react';
+import { StrictMode, createRef, type ReactNode } from 'react';
 import { render, fireEvent, act, within } from '@testing-library/react';
 import { MusicToolsBar, MetronomeToolButton, TunerToolButton, MetronomeIcon, TuningForkIcon, type MusicToolsBarProps } from './index';
 import * as root from '../index';
@@ -750,6 +750,234 @@ describe('MusicToolsBar: portal and position', () => {
     render(<Bar panelZIndex={5000} />);
     fireEvent.click(metronomeToggle());
     expect(q('.crfmt-tool-portal')!.style.getPropertyValue('--crfmt-toolbar-panel-z')).toBe('5000');
+  });
+});
+
+describe('MusicToolsBar: anchor', () => {
+  /** A host strip wider than the bar, with other controls in it. */
+  function Strip({ children, id = 'strip' }: { children: ReactNode; id?: string }) {
+    return (
+      <div id={id} className="host-strip">
+        <button type="button">Host control</button>
+        {children}
+      </div>
+    );
+  }
+  const placeEl = (sel: string, left: number, right: number, bottom: number) => {
+    q(sel)!.getBoundingClientRect = () => rect(left, right, bottom);
+  };
+
+  it('default: the nearest .crfmt-toolbar ancestor, whatever it sits in', () => {
+    render(
+      <Strip>
+        <Bar />
+      </Strip>,
+    );
+    place(400, 488, 50);
+    placeEl('#strip', 100, 900, 70);
+    fireEvent.click(tunerToggle());
+    expect(panelVar(tunerPanel(), '--crfmt-panel-left')).toBe('400px');
+    expect(panelVar(tunerPanel(), '--crfmt-panel-top')).toBe('58px');
+  });
+
+  it('a ref: the panel hangs under the host strip, left edges aligned', () => {
+    const ref = createRef<HTMLDivElement>();
+    render(
+      <div id="strip" ref={ref}>
+        <Bar anchor={ref} />
+      </div>,
+    );
+    place(400, 488, 50);
+    placeEl('#strip', 100, 900, 70);
+    fireEvent.click(tunerToggle());
+    expect(panelVar(tunerPanel(), '--crfmt-panel-left')).toBe('100px');
+    expect(panelVar(tunerPanel(), '--crfmt-panel-top')).toBe('78px');
+    // Both tools, and `align`, use it.
+    fireEvent.click(metronomeToggle());
+    expect(panelVar(metronomePanel(), '--crfmt-panel-left')).toBe('100px');
+  });
+
+  it('an element', () => {
+    const strip = document.createElement('div');
+    strip.getBoundingClientRect = () => rect(200, 1000, 90);
+    render(<Bar anchor={strip} align="end" />);
+    place(400, 488, 50);
+    fireEvent.click(tunerToggle());
+    expect(panelVar(tunerPanel(), '--crfmt-panel-left')).toBe(`${1000 - 760}px`);
+    expect(panelVar(tunerPanel(), '--crfmt-panel-top')).toBe('98px');
+  });
+
+  it('a selector: the closest ancestor of the button first, then the document', () => {
+    const a = render(
+      <>
+        <div id="other" className="host-strip" />
+        <Strip id="mine">
+          <Bar anchor=".host-strip" />
+        </Strip>
+      </>,
+    );
+    place(400, 488, 50);
+    placeEl('#other', 10, 500, 30);
+    placeEl('#mine', 120, 900, 70);
+    fireEvent.click(tunerToggle());
+    expect(panelVar(tunerPanel(), '--crfmt-panel-left')).toBe('120px');
+    a.unmount();
+
+    // Not an ancestor: found in the document.
+    render(
+      <>
+        <div id="elsewhere" />
+        <Bar anchor="#elsewhere" />
+      </>,
+    );
+    place(400, 488, 50);
+    placeEl('#elsewhere', 60, 700, 110);
+    fireEvent.click(tunerToggle());
+    expect(panelVar(tunerPanel(), '--crfmt-panel-left')).toBe('60px');
+    expect(panelVar(tunerPanel(), '--crfmt-panel-top')).toBe('118px');
+  });
+
+  it('falls back to the bar when the anchor is missing: no match, an invalid selector, an empty ref', () => {
+    for (const anchor of ['.nothing-here', '!!not a selector', createRef<HTMLElement>()]) {
+      const r = render(<Bar anchor={anchor} />);
+      place(400, 488, 50);
+      fireEvent.click(tunerToggle());
+      expect(panelVar(tunerPanel(), '--crfmt-panel-left')).toBe('400px');
+      r.unmount();
+    }
+  });
+
+  it('is read again on every measure, and works on the single tool buttons', () => {
+    render(
+      <Strip>
+        <TunerToolButton anchor="#strip" />
+        <MetronomeToolButton anchor="#strip" createEngine={kit.createEngine} />
+      </Strip>,
+    );
+    Object.defineProperty(document.documentElement, 'clientWidth', { configurable: true, value: 1280 });
+    placeEl('#strip', 100, 900, 70);
+    fireEvent.click(metronomeToggle());
+    expect(panelVar(metronomePanel(), '--crfmt-panel-left')).toBe('100px');
+    fireEvent.click(tunerToggle());
+    expect(panelVar(tunerPanel(), '--crfmt-panel-left')).toBe('100px');
+    placeEl('#strip', 140, 940, 80);
+    act(() => {
+      window.dispatchEvent(new Event('resize'));
+    });
+    expect(panelVar(tunerPanel(), '--crfmt-panel-left')).toBe('140px');
+    expect(panelVar(tunerPanel(), '--crfmt-panel-top')).toBe('88px');
+  });
+});
+
+describe('MusicToolsBar: fit', () => {
+  // A sidebar layout: 820px viewport, the bar starting at x = 280.
+  it("default ('shift'): full width, moved left over the sidebar; the tool keeps its wide layout", () => {
+    render(<Bar />);
+    place(280, 368, 50, 820);
+    fireEvent.click(tunerToggle());
+    expect(panelVar(tunerPanel(), '--crfmt-panel-left')).toBe('44px');
+    expect(panelVar(tunerPanel(), '--crfmt-panel-width')).toBe('760px');
+    expect(q('.tuner-lcd-compact')).toBeNull();
+  });
+
+  it("'shrink': the left edge stays at the bar, the width is what is left, and the tools use their stacked layout", () => {
+    render(<Bar fit="shrink" />);
+    place(280, 368, 50, 820);
+    fireEvent.click(tunerToggle());
+    expect(panelVar(tunerPanel(), '--crfmt-panel-left')).toBe('280px');
+    expect(panelVar(tunerPanel(), '--crfmt-panel-width')).toBe('524px');
+    expect(q('.tuner-lcd-compact')).toBeTruthy();
+
+    fireEvent.click(metronomeToggle());
+    expect(panelVar(metronomePanel(), '--crfmt-panel-left')).toBe('280px');
+    expect(panelVar(metronomePanel(), '--crfmt-panel-width')).toBe('524px');
+    expect(q('.metronome-chassis')!.className).toMatch(/(^|\s)metronome-compact(\s|$)/);
+    // The full card is 414px: it fits, so nothing is forced.
+    fireEvent.click(inMetronome().getByRole('button', { name: 'Switch to full mode' }));
+    expect(panelVar(metronomePanel(), '--crfmt-panel-width')).toBe('414px');
+    expect(q('.metronome-chassis')!.className).not.toMatch(/(^|\s)metronome-compact(\s|$)/);
+  });
+
+  it("'shrink' with room to spare is the same as the default, wide layout included", () => {
+    render(<Bar fit="shrink" />);
+    place(100, 188, 50);
+    fireEvent.click(tunerToggle());
+    expect(panelVar(tunerPanel(), '--crfmt-panel-left')).toBe('100px');
+    expect(panelVar(tunerPanel(), '--crfmt-panel-width')).toBe('760px');
+    expect(q('.tuner-lcd-compact')).toBeNull();
+  });
+
+  it("'shrink' with align 'end' keeps the right edge; on the single tool button too", () => {
+    render(<TunerToolButton fit="shrink" align="end" />);
+    tunerToggle().getBoundingClientRect = () => rect(500, 540, 50);
+    Object.defineProperty(document.documentElement, 'clientWidth', { configurable: true, value: 820 });
+    fireEvent.click(tunerToggle());
+    expect(panelVar(tunerPanel(), '--crfmt-panel-left')).toBe('16px');
+    expect(panelVar(tunerPanel(), '--crfmt-panel-width')).toBe('524px');
+  });
+});
+
+describe('MusicToolsBar: compactTop', () => {
+  it('the phone card uses its own top when there is one, and the anchored panel never does', () => {
+    render(<Bar />);
+    fireEvent.click(tunerToggle());
+    const cls = tunerPanel()!.className.split(/\s+/);
+    expect(cls).toContain('top-[var(--crfmt-panel-top-compact,var(--crfmt-panel-top))]');
+    expect(cls).toContain('max-h-[calc(100dvh-var(--crfmt-panel-top-compact,var(--crfmt-panel-top))-16px)]');
+    expect(cls).toContain('sm:top-[var(--crfmt-panel-top)]');
+    expect(cls).toContain('sm:max-h-[calc(100dvh-var(--crfmt-panel-top)-16px)]');
+  });
+
+  it("default ('below-bar'): no compact top is set, so the card stays below the bar", () => {
+    render(<Bar topOffset={48} />);
+    place(16, 104, 400, 360);
+    fireEvent.click(tunerToggle());
+    expect(panelVar(tunerPanel(), '--crfmt-panel-top')).toBe('408px');
+    expect(panelVar(tunerPanel(), '--crfmt-panel-top-compact')).toBe('');
+  });
+
+  it("'offset': the card is pinned 8px under topOffset wherever the bar is; from 640px nothing changes", () => {
+    const a = render(<Bar topOffset={48} compactTop="offset" />);
+    place(16, 104, 400, 360);
+    fireEvent.click(tunerToggle());
+    expect(panelVar(tunerPanel(), '--crfmt-panel-top-compact')).toBe('max(56px, env(safe-area-inset-top))');
+    expect(panelVar(tunerPanel(), '--crfmt-panel-top')).toBe('408px');
+    a.unmount();
+
+    render(<MetronomeToolButton topOffset="var(--header-height)" compactTop="offset" createEngine={kit.createEngine} />);
+    fireEvent.click(metronomeToggle());
+    expect(panelVar(metronomePanel(), '--crfmt-panel-top-compact')).toBe('max(calc(var(--header-height) + 8px), env(safe-area-inset-top))');
+  });
+});
+
+describe('MusicToolsBar: button styling hooks', () => {
+  it('border width, transition and cursor are custom properties with the old values as fallbacks', () => {
+    render(<Bar />);
+    for (const btn of [tunerToggle(), metronomeToggle()]) {
+      const cls = btn.className.split(/\s+/);
+      expect(cls).toContain('border-[length:var(--crfmt-toolbar-border-width,1px)]');
+      expect(cls).not.toContain('border');
+      expect(cls).toContain('cursor-[var(--crfmt-toolbar-cursor,pointer)]');
+      expect(cls).not.toContain('cursor-pointer');
+      expect(cls).toContain(
+        '[transition:var(--crfmt-toolbar-transition,color_150ms_cubic-bezier(0.4,0,0.2,1),background-color_150ms_cubic-bezier(0.4,0,0.2,1),border-color_150ms_cubic-bezier(0.4,0,0.2,1))]',
+      );
+      expect(cls).not.toContain('transition-colors');
+    }
+  });
+
+  it('the running dot: size, border width, pulse duration and pulse depth', () => {
+    render(<Bar />);
+    fireEvent.click(metronomeToggle());
+    fireEvent.click(inMetronome().getByRole('button', { name: 'Start' }));
+    const cls = q('.crfmt-tool-toggle-dot')!.className.split(/\s+/);
+    expect(cls).toContain('h-[var(--crfmt-toolbar-dot-size,10px)]');
+    expect(cls).toContain('w-[var(--crfmt-toolbar-dot-size,10px)]');
+    expect(cls).toContain('border-[length:var(--crfmt-toolbar-dot-border-width,1px)]');
+    expect(cls).not.toContain('border');
+    expect(cls).toContain('motion-safe:animate-[crfmt-toolbar-pulse_var(--crfmt-toolbar-dot-pulse-duration,1.6s)_ease-in-out_infinite]');
+    const keyframes = [...document.querySelectorAll('style')].map((el) => el.textContent).join('');
+    expect(keyframes).toContain('@keyframes crfmt-toolbar-pulse{50%{opacity:var(--crfmt-toolbar-dot-pulse-opacity,.35)}}');
   });
 });
 
