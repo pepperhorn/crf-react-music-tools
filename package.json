@@ -1,7 +1,7 @@
 {
   "name": "@pepperhorn/react-music-tools",
   "version": "0.1.0",
-  "description": "A metronome and an instrument tuner as drop-in React components, with a precompiled stylesheet.",
+  "description": "A metronome and an instrument tuner as drop-in React components, with a ready-made header toolbar and a precompiled stylesheet.",
   "license": "MIT",
   "type": "module",
   "packageManager": "pnpm@9.15.0",
@@ -47,6 +47,10 @@
     "./tuner": {
       "types": "./dist/tuner/index.d.ts",
       "import": "./dist/tuner/index.js"
+    },
+    "./toolbar": {
+      "types": "./dist/toolbar/index.d.ts",
+      "import": "./dist/toolbar/index.js"
     },
     "./styles.css": "./dist/styles.css",
     "./fonts.css": "./dist/fonts.css",

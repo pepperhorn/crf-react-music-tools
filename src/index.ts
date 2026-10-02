@@ -5,4 +5,5 @@
  */
 export * from './metronome';
 export * from './tuner';
+export * from './toolbar';
 export { usePersistentSettings } from './shared/usePersistentSettings';

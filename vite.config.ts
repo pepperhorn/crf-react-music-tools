@@ -18,6 +18,7 @@ export default defineConfig({
         // Next to their .d.ts files: dist/metronome/index.js + index.d.ts.
         'metronome/index': resolve(import.meta.dirname, 'src/metronome/index.ts'),
         'tuner/index': resolve(import.meta.dirname, 'src/tuner/index.ts'),
+        'toolbar/index': resolve(import.meta.dirname, 'src/toolbar/index.ts'),
       },
       formats: ['es'],
     },

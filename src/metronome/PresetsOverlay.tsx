@@ -3,7 +3,8 @@
  * subdivision pattern with its title, description, tags and a little picture
  * of its slots, filterable by tag.
  *
- * Rendered through a portal to `document.body`, so the 204px-tall Simple
+ * Rendered through a portal to `document.body` (or, inside the toolbar's
+ * floating panel, to that panel's own portal element), so the 204px-tall Simple
  * chassis (and the host's scrolling panel) cannot clip it. The parent only
  * mounts it after a click, so it never renders on the server.
  *
@@ -19,11 +20,12 @@
  * event, and the key trap does nothing while the dialog is not in the
  * document — the second guard covers any swap we were not told about.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { filterPatterns, patternTags, type SlotKind, type SubdivisionPattern } from './model';
 import { BTN, BTN_CORE, FONT_DISPLAY, FONT_MONO, FONT_UI, PAPER_BTN, SHADOW_BTN } from './styles';
 import { ROOT_CLASS } from '../shared/classes';
+import { OverlayContainerContext } from '../shared/overlay-container';
 
 export interface PresetsOverlayProps {
   patterns: readonly SubdivisionPattern[];
@@ -78,6 +80,8 @@ function CloseIcon() {
 
 export function PresetsOverlay({ patterns, selectedId, onSelect, onClose }: PresetsOverlayProps) {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  // Inside the toolbar's floating panel: its portal element, so this dialog stacks above the panel.
+  const container = useContext(OverlayContainerContext);
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
@@ -210,6 +214,6 @@ export function PresetsOverlay({ patterns, selectedId, onSelect, onClose }: Pres
         </div>
       </div>
     </div>,
-    document.body,
+    container ?? document.body,
   );
 }

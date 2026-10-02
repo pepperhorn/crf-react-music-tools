@@ -29,6 +29,33 @@ describe('styles.css', () => {
     expect(css).toContain('.sm\\:max-h-\\[80dvh\\]');
   });
 
+  it('has the toolbar utilities, with their custom properties and literal fallbacks', () => {
+    for (const fragment of [
+      'var(--crfmt-toolbar-size,40px)',
+      'var(--crfmt-toolbar-radius,10px)',
+      'var(--crfmt-toolbar-gap,8px)',
+      'var(--crfmt-toolbar-button-bg,#fff)',
+      'var(--crfmt-toolbar-button-border,#d6d3cd)',
+      'var(--crfmt-toolbar-button-color,#141210)',
+      'var(--crfmt-toolbar-open-bg,#fff56d)',
+      'var(--crfmt-toolbar-running-bg,#6bc6a0)',
+      'var(--crfmt-toolbar-panel-z,1150)',
+      'var(--crfmt-panel-left)',
+      'var(--crfmt-panel-width)',
+    ])
+      expect(css).toContain(fragment);
+    // The enlarged hit area and the capped height survive as valid calc().
+    expect(css).toMatch(/inset: min\(-3px, calc\(\(var\(--crfmt-toolbar-size,40px\) - 44px\) \/ 2\)\)/);
+    expect(css).toMatch(/max-height: calc\(100dvh - var\(--crfmt-panel-top\) - 16px\)/);
+    // The running dot only pulses for people who have not asked for reduced motion.
+    const pulse = rules.filter((r) => r.nodes.some((n) => n.type === 'decl' && /crfmt-toolbar-pulse/.test(n.value)));
+    expect(pulse.length).toBeGreaterThan(0);
+    for (const rule of pulse) {
+      const media = rule.parent?.type === 'atrule' ? (rule.parent as postcss.AtRule).params : '';
+      expect(media).toMatch(/prefers-reduced-motion: no-preference/);
+    }
+  });
+
   it('scopes every selector to the library root', () => {
     const unscoped = rules
       .flatMap((r) => r.selectors)

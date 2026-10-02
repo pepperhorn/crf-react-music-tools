@@ -17,7 +17,8 @@
     "noEmit": true,
     "types": ["node"],
     "paths": {
-      "@pepperhorn/react-music-tools": ["./src/index.ts"]
+      "@pepperhorn/react-music-tools": ["./src/index.ts"],
+      "@pepperhorn/react-music-tools/toolbar": ["./src/toolbar/index.ts"]
     }
   },
   "include": ["src", "demo", "scripts", "*.ts"]

@@ -14,5 +14,6 @@
 @source '../metronome';
 @source '../tuner';
 @source '../shared';
+@source '../toolbar';
 @source not '../**/*.test.ts';
 @source not '../**/*.test.tsx';
