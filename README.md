@@ -4,6 +4,7 @@ A **metronome** and an **instrument tuner** as drop-in React components.
 
 - `MetronomeStandalone` — sample-accurate Web Audio click, tap tempo, seven time signatures, per-beat accents, six sounds, data-driven rhythm presets, simple and full modes.
 - `TunerStandalone` — microphone pitch detection (YIN), chromatic and instrument modes (guitar, bass, ukulele, orchestral strings, transposing winds, voice), adjustable A4, two looks ("vintage" and "tiles").
+- `MusicToolsBar` — both tools as two icon buttons for a page header, each opening in a floating panel; the metronome keeps playing with its panel closed.
 - A precompiled stylesheet: no Tailwind, no CSS reset and no theme tokens needed in your app, and it does not restyle your page.
 - Settings are remembered per device (`localStorage`), and everything is safe to server-render.
 - No runtime dependencies beyond React (the optional fonts come from `@fontsource`).
@@ -40,7 +41,106 @@ export function Tools() {
 
 That is all: each component owns its settings, its audio and its clean-up.
 
-Each tool is also available on its own entry point, `@pepperhorn/react-music-tools/metronome` and `@pepperhorn/react-music-tools/tuner`.
+Each tool is also available on its own entry point, `@pepperhorn/react-music-tools/metronome` and `@pepperhorn/react-music-tools/tuner`, and the header toolbar on `@pepperhorn/react-music-tools/toolbar`.
+
+## Header toolbar
+
+To put both tools in a page header without building the buttons and floating panels yourself:
+
+```tsx
+import { MusicToolsBar } from '@pepperhorn/react-music-tools/toolbar';
+import '@pepperhorn/react-music-tools/styles.css';
+
+<header className="site-header">
+  …
+  <MusicToolsBar align="end" topOffset={64} />
+</header>
+```
+
+It renders two 40px icon buttons (a tuning fork and a metronome). Each opens its tool in a floating, non-modal dialog:
+
+- **One panel at a time.** Opening one closes the other, without moving focus back.
+- **Tuner**: opens straight from the button — the `AudioContext` is created inside that click, so there is no "Start tuner" step — and the microphone is released when the panel closes or the bar unmounts.
+- **Metronome**: the engine belongs to the bar, not to the panel, so it **keeps playing while the panel is closed**. The button then turns green, shows a small pulsing dot (still, under `prefers-reduced-motion`) and is named "Open metronome (running)". Playback stops when the bar unmounts.
+- **Keyboard**: focus moves into the panel when it opens; the × button and Escape close it and return focus to the button. Escape only acts when focus is in the panel or on its button, and never when another dialog owns the key. The buttons carry `aria-expanded` / `aria-controls`.
+- **Settings** are remembered per device, under the same default keys as the standalone components.
+- **Server rendering**: the server and the first client render are just the two closed buttons.
+
+| Prop | Type | Default | |
+| --- | --- | --- | --- |
+| `tools` | `('tuner' \| 'metronome')[]` | `['tuner', 'metronome']` | Which buttons to show, in order. |
+| `align` | `'start' \| 'end'` | `'start'` | From 640px, which edge of the bar the panel lines up with. Use `'end'` for a bar at the right of the header. A side that would leave the viewport flips to the other, and the panel is always kept 16px inside both edges. |
+| `topOffset` | `number \| string` | – | How much of the top of the viewport your sticky / fixed header covers: px, or any CSS length (`'4rem'`, `'var(--header-height)'`). See below. |
+| `panelZIndex` | `number` | `1150` | z-index of the panels. |
+| `storageKeys` | `{ tuner?, metronome? }` | `'crf-music-tools-tuner'`, `'crf-music-tools-metronome'` | `localStorage` keys. `null` keeps that tool's settings in memory only. |
+| `defaultSettings` | `{ tuner?, metronome? }` | the library defaults | Used until stored values are found. |
+| `patterns` | `readonly SubdivisionPattern[]` | `BUILTIN_PATTERNS` | The metronome's rhythm presets. Keep the array identity stable. |
+| `subtitle` | `string` | – | Small line under the metronome's brand mark. |
+| `messages` | `{ noAudio?, interrupted? }` | English | The metronome's two notices, shown in its panel. |
+| `labels` | `Partial<MusicToolsLabels>` | English | The buttons' and panels' accessible names: `openTuner`, `closeTuner`, `tuner`, `openMetronome`, `openMetronomeRunning`, `closeMetronome`, `metronome`. |
+| `onOpenChange` | `(open: 'tuner' \| 'metronome' \| null) => void` | – | Which panel is open now. |
+| `className`, `buttonClassName`, `panelClassName` | `string` | – | Added to the bar, to each button and to the floating panel. |
+| `createEngine` | `(deps) => MetronomeEngine` | – | Engine factory, for tests or custom voices. |
+
+For only one of the tools, or to place the buttons apart, use `<TunerToolButton>` and `<MetronomeToolButton>`. They take the same positioning and class props, `storageKey` / `defaultSettings` / `onSettingsChange` for their own tool, and `onOpenChange(open: boolean)`; the one-panel-at-a-time rule still holds between them. The icons are exported as `TuningForkIcon` and `MetronomeIcon` (`size`, `className`; drawn with `currentColor`).
+
+### Where the panel goes
+
+- **Under 640px** it is a full-width card with 16px gutters.
+- **From 640px** it hangs under the bar, as wide as the tool (760px; 414px for the metronome's full mode) or as the viewport allows.
+- It is never taller than the space below its top edge; it scrolls inside instead.
+- It is measured when it opens and again when the window is resized.
+
+**Sticky and fixed headers — `topOffset`.** Without it the panel starts 8px below the bar. In a header that is taller than the bar, that leaves the panel overlapping the bottom of the header, so tell the bar how tall the header is: the panel then starts 8px below `topOffset`, or 8px below the bar if the bar is lower still (a bar in the page content rather than in the header). It never sits above the bar.
+
+```tsx
+<MusicToolsBar topOffset={64} />                       {/* a 64px header */}
+<MusicToolsBar topOffset="var(--header-height)" />     {/* any CSS length */}
+```
+
+**Headers that clip.** The panel is rendered in a portal on `document.body`, so a header with `overflow: hidden`, a `transform` or a `backdrop-filter` neither clips it nor becomes its containing block. The portal element carries the library's root class, so the stylesheet applies there too. Two consequences: custom properties for the *panel* (`--crfmt-font-*`, `--crfmt-toolbar-panel-z`) must be set on `:root` / `body` or through `panelClassName`, not on your header; and in the tab order the panel comes after the rest of the page (focus is moved into it on open and back to the button on close).
+
+### Restyling the buttons
+
+The buttons look right on a bare page — white with a hairline border and a dark icon, yellow with a dark border while open, green while the metronome runs — and every value is a custom property you can set on the bar or any ancestor:
+
+| Variable | Default | |
+| --- | --- | --- |
+| `--crfmt-toolbar-size` | `40px` | Width and height of a button. The hit area stays at least 44px. |
+| `--crfmt-toolbar-gap` | `8px` | Space between the buttons. |
+| `--crfmt-toolbar-radius` | `10px` | Corner radius. |
+| `--crfmt-toolbar-button-bg` | `#fff` | Fill. |
+| `--crfmt-toolbar-button-hover-bg` | `#f4f2ee` | Fill on hover. |
+| `--crfmt-toolbar-button-border` | `#d6d3cd` | Border. |
+| `--crfmt-toolbar-button-color` | `#141210` | Icon colour. |
+| `--crfmt-toolbar-open-bg` | `#fff56d` | Fill while the panel is open. |
+| `--crfmt-toolbar-running-bg` | `#6bc6a0` | Fill while the metronome is playing. |
+| `--crfmt-toolbar-running-hover-bg` | `#7fd0ad` | The same, on hover. |
+| `--crfmt-toolbar-active-border` | `#141210` | Border while open or running, and around the dot. |
+| `--crfmt-toolbar-dot-bg` | `#f86e6e` | The "running" dot. |
+| `--crfmt-toolbar-focus` | `#141210` | Focus ring (2px, offset 2px). Change it on a dark header. |
+| `--crfmt-toolbar-panel-z` | `1150` | z-index of the panels (set on `:root`, or use `panelZIndex`). The default is above the usual sticky headers and app bars and below the usual modals. |
+
+```css
+.site-header {
+  --crfmt-toolbar-button-bg: transparent;
+  --crfmt-toolbar-button-border: rgb(255 255 255 / 0.4);
+  --crfmt-toolbar-button-color: #fff;
+  --crfmt-toolbar-focus: #fff;
+}
+```
+
+For anything else there are semantic class names — `crfmt-toolbar`, `crfmt-tool`, `crfmt-tool-toggle` (plus `-tuner` / `-metronome`, `-open`, `-running`), `crfmt-tool-toggle-dot`, `crfmt-tool-portal`, `crfmt-tool-panel` (plus `-tuner` / `-metronome`) — and `className` / `buttonClassName` / `panelClassName`. The library's rules have the specificity of one class, so a class of yours declared after `styles.css` wins.
+
+### Astro view transitions
+
+The metronome plays for as long as the bar stays mounted, so with Astro's `<ClientRouter />` keep the island alive across navigations:
+
+```astro
+<MusicToolsBar client:load transition:persist align="end" topOffset={64} />
+```
+
+A view transition replaces `document.body`, which would strand the panel's portal in the discarded body. The bar listens for `astro:before-swap` / `astro:after-swap`: a persisted bar moves its open panel into the new body and measures again (the tuner keeps its microphone session), and a bar that was not persisted closes its panel, releases the microphone and stops the metronome. Nothing is imported from Astro; on other hosts those events never fire.
 
 ## Styles
 
@@ -50,7 +150,7 @@ Each tool is also available on its own entry point, `@pepperhorn/react-music-too
 import '@pepperhorn/react-music-tools/styles.css';
 ```
 
-About 45 kB (6 kB gzipped). It is built to be a good guest:
+About 52 kB (7 kB gzipped). It is built to be a good guest:
 
 - **Nothing global.** Every rule only matches the library's root elements (class `crf-music-tools`) and what is inside them. There is no reset, no `html` / `body` / `button` rule, no `:root` variables. A host element that happens to have a class such as `flex` or `grid` is not affected.
 - **Nothing borrowed.** No theme tokens, no dependency on your root font size (lengths are in `px`), no dependency on your page's line height, alignment or font.
@@ -58,7 +158,7 @@ About 45 kB (6 kB gzipped). It is built to be a good guest:
 
 What it cannot do: stop *your* CSS from reaching in. The library's base rules and utilities have the specificity of a single class, so a host rule such as `button { … }` loses to them, but a stronger one (`#app button { … }`, anything with `!important`) wins. The components carry semantic class names (`metronome-btn-start`, `tuner-lcd`, …) if you want to adjust something on purpose.
 
-The rhythm-presets dialog is rendered in a portal on `document.body`; it carries the same root class, so it is styled wherever it lands.
+The rhythm-presets dialog and the header toolbar's floating panels are rendered in portals on `document.body`; they carry the same root class, so they are styled wherever they land.
 
 ### If you already use Tailwind CSS 4
 
@@ -196,6 +296,7 @@ To build your own display, `useMicPitch(audioContext, options)` returns `{ statu
 - Metronome model: `DEFAULT_METRONOME_SETTINGS`, `parseMetronomeSettings`, `SIGNATURES`, `SOUNDS`, `BPM_MIN` / `BPM_MAX` / `BPM_DEFAULT`, `clampBpm`, `tempoName`, `withSignature`, `cycleAccent`, `defaultAccents`, `tapTempo`, `BUILTIN_PATTERNS`, `parsePatterns`, `resolvePattern`, `patternTags`, `filterPatterns`, `VOICES`, `createTickTimer`, and their types.
 - Tuner model: `DEFAULT_TUNER_SETTINGS`, `parseTunerSettings`, `INSTRUMENTS`, `STRINGS_VARIANTS`, `STRING_PRESETS`, `WIND_KEYS`, `TUNER_THEMES`, `TUNER_RESPONSES`, `RESPONSE_PROFILES`, `A4_MIN` / `A4_MAX` / `A4_DEFAULT`, `clampA4`, `detectPitch`, `freqToNote`, `midiToFreq`, `centsBetween`, `noteName`, `noteLabel`, `parseNote`, `getStrings`, `nearestString`, `writtenMidi`, `formatCents`, `formatHz`, and their types.
 - `METRONOME_STORAGE_KEY`, `TUNER_STORAGE_KEY`, `METRONOME_MESSAGES`.
+- Toolbar: `MusicToolsBar`, `TunerToolButton`, `MetronomeToolButton`, `TuningForkIcon`, `MetronomeIcon`, `DEFAULT_MUSIC_TOOLS_LABELS`, the positioning functions `computePanelPosition`, `panelLeft`, `panelTop`, `panelWidth` (with `PANEL_GAP`, `PANEL_GUTTER`), and their types.
 
 ## Metronome patterns
 
@@ -243,13 +344,13 @@ const PATTERNS = parsePatterns(myPatterns); // once, at module level
 
 ## Server rendering
 
-Both components can be rendered on the server (Next.js, Astro, Remix, …). The server render and the first client render always use the default settings and the compact layout, so hydration matches; stored settings and the real layout are applied straight after mount. No audio object is created during render — the metronome's engine is made on the first Start and the tuner's `AudioContext` in its Start click.
+All the components can be rendered on the server (Next.js, Astro, Remix, …). The server render and the first client render always use the default settings and the compact layout, so hydration matches; stored settings and the real layout are applied straight after mount. No audio object is created during render — the metronome's engine is made on the first Start and the tuner's `AudioContext` in its Start click. The header toolbar renders only its two closed buttons until one is pressed.
 
 In frameworks with server components, render them from a client component (`'use client'`).
 
 ## Audio, microphone and iOS
 
-- **A user gesture is required.** Browsers — iOS Safari most strictly — only let audio start from a tap or click. The metronome starts its `AudioContext` synchronously inside the Start press, and the tuner creates its context inside the Start press. If you use the low-level components, keep that property: call `onStart` / `engine.start()` / `createTunerAudioContext()` directly in the event handler, not after an `await` or a timeout.
+- **A user gesture is required.** Browsers — iOS Safari most strictly — only let audio start from a tap or click. The metronome starts its `AudioContext` synchronously inside the Start press, and the tuner creates its context inside the Start press (in the header toolbar: inside the press on the tuner button). If you use the low-level components, keep that property: call `onStart` / `engine.start()` / `createTunerAudioContext()` directly in the event handler, not after an `await` or a timeout.
 - **The microphone needs a secure origin**: `https://`, or `localhost` during development. On an insecure origin the tuner says so instead of asking.
 - **Interruptions.** A phone call, Siri or backgrounding the page can suspend audio. The metronome stops and shows a notice; the tuner resumes when it can and otherwise offers a Restart button.
 - **The iOS ringer switch** silences Web Audio. That is the platform's behaviour.
@@ -270,8 +371,8 @@ pnpm build       # dist/: ESM + .d.ts, styles.css, fonts.css, patterns.schema.js
 pnpm pack        # build, then create the tarball
 ```
 
-- `src/metronome`, `src/tuner` — the components, each self-contained. `src/shared` — the persistence hook and shared class fragments.
+- `src/metronome`, `src/tuner` — the components, each self-contained. `src/toolbar` — the header toolbar built on them. `src/shared` — the persistence hook and shared class fragments.
 - `src/styles` — the Tailwind input, the scoped base rules and `fonts.css`. `scripts/build-css.mjs` compiles and scopes the stylesheet.
-- `demo/` — a page with every component in every mode and theme. It has no CSS of its own, so it shows exactly what a bare host page gets. `?fonts=0` skips the fonts; `?hostile=1` adds an aggressive host stylesheet.
+- `demo/` — a page with every component in every mode and theme, under a sticky header that holds the toolbar. It has no CSS of its own, so it shows exactly what a bare host page gets. `?fonts=0` skips the fonts; `?hostile=1` adds an aggressive host stylesheet.
 
 When you add or change classes in a component, keep them host-independent: explicit values instead of theme tokens (`border-[#141210]`, not `border-border`), and a semantic class name next to the utilities.

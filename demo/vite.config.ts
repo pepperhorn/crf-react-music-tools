@@ -40,6 +40,7 @@ export default defineConfig({
     alias: [
       { find: '@pepperhorn/react-music-tools/styles.css', replacement: generated },
       { find: '@pepperhorn/react-music-tools/fonts.css', replacement: resolve(root, 'src/styles/fonts.css') },
+      { find: /^@pepperhorn\/react-music-tools\/toolbar$/, replacement: resolve(root, 'src/toolbar/index.ts') },
       { find: /^@pepperhorn\/react-music-tools$/, replacement: resolve(root, 'src/index.ts') },
     ],
   },

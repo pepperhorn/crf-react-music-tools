@@ -21,7 +21,19 @@ First version, extracted from an internal app.
 - `@pepperhorn/react-music-tools/fonts.css`: optional self-hosted fonts.
 - `@pepperhorn/react-music-tools/patterns.schema.json`: JSON Schema for custom
   metronome rhythm patterns.
-- Entry points `@pepperhorn/react-music-tools/metronome` and `@pepperhorn/react-music-tools/tuner`.
+- `MusicToolsBar`: a ready-made header toolbar — the tuner and the metronome as
+  two icon buttons, each opening in a floating, non-modal panel. One panel at a
+  time; the tuner opens straight from its button and releases the microphone
+  when its panel closes; the metronome keeps playing with its panel closed and
+  the button shows it. The panels are portalled to `document.body` (so a
+  header with `overflow: hidden`, a transform or a `backdrop-filter` cannot
+  clip them), stay inside the viewport (`align`, automatic flip, `topOffset`
+  for sticky headers) and survive Astro view transitions. The buttons are
+  restylable through `--crfmt-toolbar-*` custom properties.
+- `TunerToolButton`, `MetronomeToolButton`, `TuningForkIcon`, `MetronomeIcon`
+  and the positioning functions, for hosts that want only part of the toolbar.
+- Entry points `@pepperhorn/react-music-tools/metronome`,
+  `@pepperhorn/react-music-tools/tuner` and `@pepperhorn/react-music-tools/toolbar`.
 
 ### Changed (compared with the components in the app they came from)
 
